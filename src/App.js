@@ -8,14 +8,16 @@ import { productInputs, userInputs } from "./formSource";
 import "./style/dark.scss";
 import { useContext } from "react";
 import { DarkModeContext } from "./context/darkModeContext";
+import { AuthContext } from "./context/AuthContext";
 
 function App() {
   const { darkMode } = useContext(DarkModeContext);
-  const currentUser = false;
+  const { currentUser } = useContext(AuthContext);
 
   const RequireAuth = ({ children }) => {
     return currentUser ? children : <Navigate to="/login" />;
   };
+  console.log(currentUser);
 
   return (
     <div className={darkMode ? "app dark" : "app"}>
@@ -27,26 +29,61 @@ function App() {
               index
               element={
                 <RequireAuth>
-                  {" "}
-                  <Home />{" "}
+                  <Home />
                 </RequireAuth>
               }
             />
 
             <Route path="users">
-              <Route index element={ <RequireAuth> <List /> </RequireAuth> } />
-              <Route path=":userId" element={<RequireAuth> <Single /> </RequireAuth> } />
+              <Route
+                index
+                element={
+                  <RequireAuth>
+                    <List />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path=":userId"
+                element={
+                  <RequireAuth>
+                    <Single />
+                  </RequireAuth>
+                }
+              />
               <Route
                 path="new"
-                element={ <RequireAuth> <New inputs={userInputs} title="Add New User" /> </RequireAuth> }
+                element={
+                  <RequireAuth>
+                    <New inputs={userInputs} title="Add New User" />
+                  </RequireAuth>
+                }
               />
             </Route>
             <Route path="products">
-              <Route index element={<RequireAuth> <List /> </RequireAuth> } />
-              <Route path=":productId" element={ <RequireAuth> <Single /> </RequireAuth> } />
+              <Route
+                index
+                element={
+                  <RequireAuth>
+                    <List />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path=":productId"
+                element={
+                  <RequireAuth>
+                    <Single />
+                  </RequireAuth>
+                }
+              />
               <Route
                 path="new"
-                element={<RequireAuth> <New inputs={productInputs} title="Add New Product" /> </RequireAuth> }
+                element={
+                  <RequireAuth>
+                    <New inputs={productInputs} title="Add New Product" />{" "}
+                  </RequireAuth>
+                }
               />
             </Route>
           </Route>
