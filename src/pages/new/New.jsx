@@ -9,23 +9,72 @@ import {
   serverTimestamp,
   setDoc,
 } from "firebase/firestore";
-import { useState } from "react";
-import { auth, db } from "../../Firebase";
+import { useEffect, useState } from "react";
+import { auth, db, storage } from "../../Firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { useNavigate } from "react-router-dom";
 
 const New = ({ inputs, title }) => {
   const [file, setFile] = useState("");
   const [data, setData] = useState({});
+  const [percentage, setPercentage] = useState(null);
+  const navigate= useNavigate();
+
+  useEffect(() => {
+    const uploadFile = () => {
+      const name = new Date().getTime() + file.name;
+      const storageRef = ref(storage, file.name);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      // Register three observers:
+      // 1. 'state_changed' observer, called any time the state changes
+      // 2. Error observer, called on failure
+      // 3. Completion observer, called on successful completion
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          // Observe state change events such as progress, pause, and resume
+          // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log("Upload is " + progress + "% done");
+          setPercentage(progress)
+          switch (snapshot.state) {
+            case "paused":
+              console.log("Upload is paused");
+              break;
+            case "running":
+              console.log("Upload is running");
+              break;
+            default:
+              break;
+          }
+        },
+        (error) => {
+          console.log(error);
+        },
+        () => {
+          // Handle successful uploads on complete
+          // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            setData((prev) => ({ ...prev, img: downloadURL }));
+          });
+        }
+      );
+    };
+    file && uploadFile();
+  }, [file]);
 
   const handleInput = (e) => {
     const id = e.target.id;
     const value = e.target.value;
     setData({ ...data, [id]: value });
   };
-  console.log(data);
 
   const handleAdd = async (e) => {
     e.preventDefault();
+    console.log(data);
     try {
       const res = await createUserWithEmailAndPassword(
         auth,
@@ -36,6 +85,7 @@ const New = ({ inputs, title }) => {
         ...data,
         timeStamp: serverTimestamp(),
       });
+      navigate(-1)
     } catch (err) {
       console.log(err);
     }
@@ -81,10 +131,11 @@ const New = ({ inputs, title }) => {
                     type={input.type}
                     placeholder={input.placeholder}
                     onChange={handleInput}
+                    id={input.id}
                   />
                 </div>
               ))}
-              <button type="submit">Send</button>
+              <button disabled={percentage !==null && percentage < 100} type="submit">Send</button>
             </form>
           </div>
         </div>
